@@ -1,6 +1,8 @@
 *.o
 *.ko
 *.mod.c
+.*
+*.kdev4
 Module.symvers
 modules.order
 
