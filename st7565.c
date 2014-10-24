@@ -15,4 +15,3 @@ void cleanup_module()
 }
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Kamil Lorenc <v3l0c1r4pt0r_at_gmail_dot_com>");
