@@ -1,5 +1,8 @@
-#include <linux.fs.h>
+#include <linux/fs.h>
+
+#define SUCCESS 0
 
 struct st7565 {
-  struct file_operations fops;
+  struct file_operations *fops;
+  unsigned int major;
 }

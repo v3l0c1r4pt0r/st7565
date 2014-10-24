@@ -1,14 +1,27 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sysrq.h>
+#include <linux/slab.h>
+#include <linux/fs.h>
 
 #include "st7565.h"
 
+static struct st7565 st7565_data;
+
 int init_module()
 {
-  printk(KERN_INFO "module loaded\n");
   handle_sysrq('g');	// st7565.ko+0x24
-  return 0;
+			//comment out if not debug
+  static struct file_operations fops =
+  {
+    
+  };
+  st7565_data.fops = &fops;
+  
+  printk(KERN_INFO "module loaded\n");
+  return SUCCESS;
+out:
+  return -1;
 }
 
 void cleanup_module()
