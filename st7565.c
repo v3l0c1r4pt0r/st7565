@@ -17,10 +17,11 @@ int init_module()
     
   };
   st7565_data.fops = &fops;
-  
+//   st7565_data.major = register_chrdev(0, DEVICE_NAME, st7565_data.fops);
   printk(KERN_INFO "module loaded\n");
   return SUCCESS;
 out:
+  printk(KERN_INFO "module cannot be loaded\n");
   return -1;
 }
 
