@@ -2,6 +2,8 @@
 #include <linux/kernel.h>
 #include <linux/sysrq.h>
 
+#include "st7565.h"
+
 int init_module()
 {
   printk(KERN_INFO "module loaded\n");
