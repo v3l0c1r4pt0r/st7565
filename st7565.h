@@ -1,9 +1,16 @@
+#include <linux/cdev.h>
+#include <linux/device.h>
 #include <linux/fs.h>
 
 #define SUCCESS 0
 #define DEVICE_NAME "glcd"
+#define DEVICE_MINORS	1
 
 struct st7565 {
+  dev_t dev;
+  struct class *cl;
+  struct device *device;
+  struct cdev cdev;
   struct file_operations *fops;
   unsigned int major;
   int dev_opened;

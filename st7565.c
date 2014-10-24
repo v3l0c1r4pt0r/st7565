@@ -1,8 +1,9 @@
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/sysrq.h>
-#include <linux/slab.h>
+#include <linux/device.h>
 #include <linux/fs.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/slab.h>
+#include <linux/sysrq.h>
 #include <asm/uaccess.h>
 
 #include "st7565.h"
@@ -27,14 +28,39 @@ int init_module()
         .write	= glcd_write
     };
     st.fops = &fops;
-    st.major = register_chrdev(0, DEVICE_NAME, st.fops);
-    if(st.major < 0)
+    error = alloc_chrdev_region(&st.dev, 0, DEVICE_MINORS, DEVICE_NAME);
+    if(error < 0)
     {
-        printk(KERN_ALERT "Registering char device failed with %d\n", st.major);
+        printk(KERN_ALERT "Device major number allocation failed with %d\n", error);
         goto out;
+    }
+    st.cl = class_create(THIS_MODULE, DEVICE_NAME);
+    if(st.cl == NULL)
+    {
+        printk(KERN_ALERT "Class creation failed\n");
+        goto unregchr;
+    }
+    st.device = device_create(st.cl, NULL, st.dev, NULL, DEVICE_NAME);
+    if(st.device == NULL)
+    {
+        printk(KERN_ALERT "Device creation failed\n");
+        goto destroyclass;
+    }
+    cdev_init(&st.cdev, st.fops);
+    error = cdev_add(&st.cdev, st.dev, DEVICE_MINORS);
+    if(error < 0)
+    {
+      printk(KERN_ALERT "Adding character device failed with %d\n", error);
+      goto devicedestroy;
     }
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
+devicedestroy:
+    device_destroy(st.cl, st.dev);
+destroyclass:
+    class_destroy(st.cl);
+unregchr:
+    unregister_chrdev_region(st.dev, DEVICE_MINORS);
 out:
     printk(KERN_INFO "module cannot be loaded\n");
     return error;
@@ -42,9 +68,9 @@ out:
 
 void cleanup_module()
 {
-    int ret = unregister_chrdev(st.major, DEVICE_NAME);
-    if (ret < 0)
-        printk(KERN_ALERT "Error in unregister_chrdev: %d\n", ret);
+    device_destroy(st.cl, st.dev);
+    class_destroy(st.cl);
+    unregister_chrdev_region(st.dev, DEVICE_MINORS);
     printk(KERN_INFO "module unloaded\n");
 }
 
