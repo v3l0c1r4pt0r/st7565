@@ -25,7 +25,8 @@ int init_module()
         .open	= glcd_open,
         .release	= glcd_release,
         .read	= glcd_read,
-        .write	= glcd_write
+        .write	= glcd_write,
+        .llseek	= glcd_llseek
     };
     st.fops = &fops;
     error = alloc_chrdev_region(&st.dev, 0, DEVICE_MINORS, DEVICE_NAME);
@@ -79,6 +80,7 @@ MODULE_LICENSE("GPL");
 static int glcd_open(struct inode *inode, struct file *file)
 {
     static int counter = 0;
+    int error = -1;
 
     if (st.dev_opened)
         return -EBUSY;
@@ -86,7 +88,9 @@ static int glcd_open(struct inode *inode, struct file *file)
     st.dev_opened++;
     sprintf(msg, "I already told you %d times Hello world!\n", counter++);
     msgPtr = msg;
-    try_module_get(THIS_MODULE);
+    error = try_module_get(THIS_MODULE);
+    if(error == 0)
+      return -1;
 
     return SUCCESS;
 }
@@ -149,4 +153,10 @@ glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
     printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
     return -EINVAL;
+}
+
+static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
+{
+  //TODO: change position according to off and whence
+  return filp->f_pos;
 }

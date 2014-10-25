@@ -20,3 +20,4 @@ static int glcd_open(struct inode *inode, struct file *file);
 static int glcd_release(struct inode *inode, struct file *file);
 static ssize_t glcd_read(struct file *filp, char *buffer, size_t length, loff_t * offset);
 static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off);
+static loff_t glcd_llseek(struct file* filp, loff_t off, int whence);
