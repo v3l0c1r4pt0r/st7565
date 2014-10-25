@@ -2,9 +2,12 @@
 #include <linux/device.h>
 #include <linux/fs.h>
 
-#define SUCCESS 0
-#define DEVICE_NAME "glcd"
+#define SUCCESS		0
+#define DEVICE_NAME	"glcd"
 #define DEVICE_MINORS	1
+#define LCD_WIDTH	128
+#define LCD_HEIGHT	64
+#define LCD_BUFF_SIZE	(LCD_WIDTH * LCD_HEIGHT / 8)
 
 struct st7565 {
   dev_t dev;
@@ -14,6 +17,7 @@ struct st7565 {
   struct file_operations *fops;
   unsigned int major;
   int dev_opened;
+  unsigned char buffer[LCD_BUFF_SIZE];
 };
 
 static int glcd_open(struct inode *inode, struct file *file);
