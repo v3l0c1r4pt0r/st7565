@@ -11,8 +11,6 @@
 static struct st7565 st;
 
 //for test purposes only
-#define BUF_LEN 80		/* Max length of the message from the device */
-static char msg[BUF_LEN];	/* The msg the device will give when asked */
 static char *msgPtr;
 
 int init_module()
@@ -20,6 +18,14 @@ int init_module()
     int error = -1;
     handle_sysrq('g');	// st7565.ko+0x24
     //comment out if not debug
+    /*FIXME:TMP*/
+    unsigned char buf[] = "\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
+			  " !\"#$%&'()*+,-./0123456789:;<=>?"
+			  "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+			  "`abcdefghijklmnopqrstuvwxyz{|}~\177";
+    memcpy(st.buffer, buf, 128);
+    st.buffer[128]='\0';
+    /*FIXME:END*/
     static struct file_operations fops =
     {
         .open	= glcd_open,
@@ -86,8 +92,7 @@ static int glcd_open(struct inode *inode, struct file *file)
         return -EBUSY;
 
     st.dev_opened++;
-    sprintf(msg, "I already told you %d times Hello world!\n", counter++);
-    msgPtr = msg;
+    msgPtr = st.buffer;
     error = try_module_get(THIS_MODULE);
     if(error == 0)
       return -1;
@@ -117,6 +122,11 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
      * Number of bytes actually written to the buffer
      */
     int bytes_read = 0;
+    
+    /*
+     * Set msgPtr's offset to offset
+     */
+//     msgPtr += offset;
 
     /*
      * If we're at the end of the message,
