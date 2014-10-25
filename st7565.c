@@ -157,6 +157,6 @@ glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 
 static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
 {
-  //TODO: change position according to off and whence
+  //TODO: change position according to off and whence; update position on ST7565
   return filp->f_pos;
 }
