@@ -25,7 +25,8 @@ int init_module()
         .open	= glcd_open,
         .release	= glcd_release,
         .read	= glcd_read,
-        .write	= glcd_write
+        .write	= glcd_write,
+        .llseek	= glcd_llseek
     };
     st.fops = &fops;
     error = alloc_chrdev_region(&st.dev, 0, DEVICE_MINORS, DEVICE_NAME);
@@ -152,4 +153,10 @@ glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
     printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
     return -EINVAL;
+}
+
+static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
+{
+  //TODO: change position according to off and whence
+  return filp->f_pos;
 }
