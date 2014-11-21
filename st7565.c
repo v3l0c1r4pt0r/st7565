@@ -20,9 +20,9 @@ int init_module()
     //comment out if not debug
     /*FIXME:TMP*/
     unsigned char buf[] = "\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
-			  " !\"#$%&'()*+,-./0123456789:;<=>?"
-			  "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-			  "`abcdefghijklmnopqrstuvwxyz{|}~\177";
+                          " !\"#$%&'()*+,-./0123456789:;<=>?"
+                          "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+                          "`abcdefghijklmnopqrstuvwxyz{|}~\177";
     memcpy(st.buffer, buf, 128);
     st.buffer[128]='\0';
     /*FIXME:END*/
@@ -57,8 +57,8 @@ int init_module()
     error = cdev_add(&st.cdev, st.dev, DEVICE_MINORS);
     if(error < 0)
     {
-      printk(KERN_ALERT "Adding character device failed with %d\n", error);
-      goto devicedestroy;
+        printk(KERN_ALERT "Adding character device failed with %d\n", error);
+        goto devicedestroy;
     }
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
@@ -85,17 +85,19 @@ MODULE_LICENSE("GPL");
 
 static int glcd_open(struct inode *inode, struct file *file)
 {
-    static int counter = 0;
     int error = -1;
 
     if (st.dev_opened)
+    {
+        printk(KERN_INFO "device already in use\n");
         return -EBUSY;
+    }
 
     st.dev_opened++;
     msgPtr = st.buffer;
     error = try_module_get(THIS_MODULE);
     if(error == 0)
-      return -1;
+        return -1;
 
     return SUCCESS;
 }
@@ -118,11 +120,14 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
                          size_t length,	/* length of the buffer     */
                          loff_t * offset)
 {
+    unsigned long bytes_read;
+
     /*
      * Number of bytes actually written to the buffer
      */
-    int bytes_read = 0;
-    
+    if(offset + length > (loff_t*)st.buffer + LCD_BUFF_SIZE)
+        length = (loff_t*)st.buffer + LCD_BUFF_SIZE - offset;
+
     /*
      * Set msgPtr's offset to offset
      */
@@ -132,25 +137,15 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
      * If we're at the end of the message,
      * return 0 signifying end of file
      */
-    if (*msgPtr == 0)
+    if (*(st.buffer + filp->f_pos) == 0)
         return 0;
 
-    /*
-     * Actually put the data into the buffer
-     */
-    while (length && *msgPtr) {
+    if(copy_to_user(buffer,
+                    st.buffer + filp->f_pos,
+                    length))
+        bytes_read = -EFAULT;
 
-        /*
-         * The buffer is in the user data segment, not the kernel
-         * segment so "*" assignment won't work.  We have to use
-         * put_user which copies data from the kernel data segment to
-         * the user data segment.
-         */
-        put_user(*(msgPtr++), buffer++);
-
-        length--;
-        bytes_read++;
-    }
+    offset += length;
 
     /*
      * Most read functions return the number of bytes put into the buffer
@@ -167,6 +162,6 @@ glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 
 static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
 {
-  //TODO: change position according to off and whence; update position on ST7565
-  return filp->f_pos;
+    //TODO: change position according to off and whence; update position on ST7565
+    return filp->f_pos;
 }
