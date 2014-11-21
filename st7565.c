@@ -11,7 +11,7 @@
 
 static struct st7565 st;
 
-static int __init st7565_init()
+static int st7565_init()
 {
     int error = -1;
     //comment out if not debug
@@ -92,9 +92,6 @@ MODULE_LICENSE("GPL");
 static int glcd_open(struct inode *inode, struct file *file)
 {
     int error = -1;
-    error = try_module_get(THIS_MODULE);
-    if(error == 0)
-        return -1;
     printk(KERN_INFO "opened glcd device\n");
 
     if (st.dev_opened)
@@ -103,6 +100,10 @@ static int glcd_open(struct inode *inode, struct file *file)
     }
 
     st.dev_opened++;
+    
+    error = try_module_get(THIS_MODULE);
+    if(error == 0)
+        return -1;
 
     return SUCCESS;
 }
