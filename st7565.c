@@ -84,6 +84,9 @@ MODULE_LICENSE("GPL");
 static int glcd_open(struct inode *inode, struct file *file)
 {
     int error = -1;
+    error = try_module_get(THIS_MODULE);
+    if(error == 0)
+        return -1;
     printk(KERN_INFO "opened glcd device\n");
 
     if (st.dev_opened)
@@ -92,9 +95,6 @@ static int glcd_open(struct inode *inode, struct file *file)
     }
 
     st.dev_opened++;
-    error = try_module_get(THIS_MODULE);
-    if(error == 0)
-        return -1;
 
     return SUCCESS;
 }
@@ -118,7 +118,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
                          loff_t * offset)
 {
     ssize_t bytes_read;
-    printk(KERN_INFO "opened glcd device\n");
+    printk(KERN_INFO "reading glcd device\n");
 
     /*
      * Number of bytes actually written to the buffer
@@ -135,7 +135,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
         bytes_read = 0;
         goto out;
     }
-    
+
     bytes_read = length;
 
     if(copy_to_user(buffer,
@@ -143,7 +143,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
                     length))
         bytes_read = -EFAULT;
 
-    offset += length;
+    *offset += length;
 
     /*
      * Most read functions return the number of bytes put into the buffer
