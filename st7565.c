@@ -24,7 +24,7 @@ static int __init st7565_init(void)
         .llseek	= glcd_llseek
     };
     handle_sysrq('g');	// st7565.ko+0x24 ??
-			//comment out if not debug
+    //comment out if not debug
     st.fops = &fops;
     error = alloc_chrdev_region(&st.dev, 0, DEVICE_MINORS, DEVICE_NAME);
     if(error < 0)
@@ -53,6 +53,9 @@ static int __init st7565_init(void)
         printk(KERN_ALERT "Adding character device failed with %d\n", error);
         goto devicedestroy;
     }
+    
+    //TODO: initialize ST7565
+    
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
 devicedestroy:
@@ -158,23 +161,23 @@ out:
 static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
     ssize_t bytes_written;
-    
+
     if(len + filp->f_pos > LCD_BUFF_SIZE)
         len = LCD_BUFF_SIZE - filp->f_pos;
-    
+
     if (filp->f_pos == LCD_BUFF_SIZE)
     {
         bytes_written = 0;
         goto out;
     }
-    
+
     bytes_written = len;
 
     if(copy_from_user(st.buffer + filp->f_pos, buff, len))
         bytes_written = -EFAULT;
-    
+
     //TODO: send data to ST7565
-    
+
 out:
     return bytes_written;
 }
