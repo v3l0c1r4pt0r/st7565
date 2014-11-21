@@ -1,5 +1,6 @@
 #include <linux/device.h>
 #include <linux/fs.h>
+#include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -41,12 +42,14 @@ static int __init st7565_init()
     st.cl = class_create(THIS_MODULE, DEVICE_NAME);
     if(st.cl == NULL)
     {
+    	error = -1;
         printk(KERN_ALERT "Class creation failed\n");
         goto unregchr;
     }
     st.device = device_create(st.cl, NULL, st.dev, NULL, DEVICE_NAME);
     if(st.device == NULL)
     {
+    	error = -1;
         printk(KERN_ALERT "Device creation failed\n");
         goto destroyclass;
     }
