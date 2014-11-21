@@ -16,8 +16,7 @@ static char *msgPtr;
 int init_module()
 {
     int error = -1;
-    handle_sysrq('g');	// st7565.ko+0x24
-    //comment out if not debug
+			//comment out if not debug
     /*FIXME:TMP*/
     unsigned char buf[] = "\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
                           " !\"#$%&'()*+,-./0123456789:;<=>?"
@@ -34,6 +33,7 @@ int init_module()
         .write	= glcd_write,
         .llseek	= glcd_llseek
     };
+    handle_sysrq('g');	// st7565.ko+0x24 ??
     st.fops = &fops;
     error = alloc_chrdev_region(&st.dev, 0, DEVICE_MINORS, DEVICE_NAME);
     if(error < 0)
@@ -75,6 +75,7 @@ out:
 
 void cleanup_module()
 {
+    printk(KERN_INFO "cleaning...\n");
     device_destroy(st.cl, st.dev);
     class_destroy(st.cl);
     unregister_chrdev_region(st.dev, DEVICE_MINORS);
@@ -86,6 +87,7 @@ MODULE_LICENSE("GPL");
 static int glcd_open(struct inode *inode, struct file *file)
 {
     int error = -1;
+    printk(KERN_INFO "opened glcd device\n");
 
     if (st.dev_opened)
     {
@@ -137,11 +139,11 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
      * If we're at the end of the message,
      * return 0 signifying end of file
      */
-    if (*(st.buffer + filp->f_pos) == 0)
+    if (*(offset) == 0)
         return 0;
 
     if(copy_to_user(buffer,
-                    st.buffer + filp->f_pos,
+                    offset,
                     length))
         bytes_read = -EFAULT;
 
@@ -153,8 +155,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
     return bytes_read;
 }
 
-static ssize_t
-glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
+static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
     //TODO: change buffer in memory and send data to ST7565
     printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
