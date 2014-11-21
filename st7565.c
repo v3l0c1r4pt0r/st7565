@@ -14,6 +14,7 @@ static struct st7565 st;
 static int __init st7565_init(void)
 {
     int error = -1;
+    memset(st.buffer, 0, LCD_BUFF_SIZE);
     //comment out if not debug
     /*FIXME:TMP*/
     unsigned char buf[] = "\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
@@ -131,23 +132,25 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
     /*
      * Number of bytes actually written to the buffer
      */
-    if(offset + length > (loff_t*)st.buffer + LCD_BUFF_SIZE)
-        length = (loff_t*)st.buffer + LCD_BUFF_SIZE - offset;
-
+printk(KERN_INFO "length: 0x%X; buffer: 0x%X; fpos: 0x%X\n", length, st.buffer, filp->f_pos);
+    if(length + filp->f_pos > LCD_BUFF_SIZE)
+        length = LCD_BUFF_SIZE - filp->f_pos;
+printk(KERN_INFO "length: 0x%X; buffer: 0x%X; fpos: 0x%X\n", length, st.buffer, filp->f_pos);
     /*
      * If we're at the end of the message,
      * return 0 signifying end of file
      */
-    if (*(offset) == 0)
+    if (filp->f_pos == LCD_BUFF_SIZE)
     {
         bytes_read = 0;
         goto out;
     }
+//     printk(KERN_INFO "%c, %c", *(st.buffer), *(st.buffer + filp->f_pos));
 
     bytes_read = length;
 
     if(copy_to_user(buffer,
-                    offset,
+                    st.buffer + filp->f_pos,
                     length))
         bytes_read = -EFAULT;
 
