@@ -1,5 +1,6 @@
 #include <linux/device.h>
 #include <linux/fs.h>
+#include <linux/gpio.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -53,9 +54,9 @@ static int __init st7565_init(void)
         printk(KERN_ALERT "Adding character device failed with %d\n", error);
         goto devicedestroy;
     }
-    
-    //TODO: initialize ST7565
-    
+
+    st7565_init_lcd();
+
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
 devicedestroy:
@@ -73,6 +74,8 @@ module_init(st7565_init);
 
 static void __exit st7565_cleanup(void)
 {
+    st7565_release_lcd();
+
     cdev_del(&st.cdev);
     device_destroy(st.cl, st.dev);
     class_destroy(st.cl);
@@ -201,4 +204,30 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
         //FIXME: what about the case when f_pos is beeing set outside of buffer, what would be read then?
     }
     return filp->f_pos;
+}
+
+static void st7565_init_lcd(void)
+{
+    //TODO: initialization procedure
+    struct gpio gpio = {
+        .gpio =		ST7565_BACK,
+        .label =	"st7565->back"
+    };
+    struct gpio gpiov[] = {gpio};
+    if(gpio_request_array(gpiov, 1))
+        ;//TODO: fail
+    if(gpio_direction_output(gpio.gpio, 0))
+        ;//TODO: fail
+    gpio_set_value(gpio.gpio, 1);
+}
+
+static void st7565_release_lcd(void)
+{
+    struct gpio gpio = {
+        .gpio =		ST7565_BACK,
+        .label =	"st7565->back"
+    };
+    struct gpio gpiov[] = {gpio};
+    gpio_set_value(gpio.gpio, 0);
+    gpio_free_array(gpiov, 1);
 }
