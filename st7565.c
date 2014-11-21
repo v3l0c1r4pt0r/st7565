@@ -10,9 +10,6 @@
 
 static struct st7565 st;
 
-//for test purposes only
-static char *msgPtr;
-
 int init_module()
 {
     int error = -1;
@@ -91,12 +88,10 @@ static int glcd_open(struct inode *inode, struct file *file)
 
     if (st.dev_opened)
     {
-        printk(KERN_INFO "device already in use\n");
         return -EBUSY;
     }
 
     st.dev_opened++;
-    msgPtr = st.buffer;
     error = try_module_get(THIS_MODULE);
     if(error == 0)
         return -1;
