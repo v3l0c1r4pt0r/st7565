@@ -10,7 +10,7 @@
 
 static struct st7565 st;
 
-int init_module()
+static int __init st7565_init()
 {
     int error = -1;
     //comment out if not debug
@@ -70,14 +70,19 @@ out:
     return error;
 }
 
-void cleanup_module()
+module_init(st7565_init);
+
+static void __exit st7565_cleanup()
 {
     printk(KERN_INFO "cleaning...\n");
+    cdev_del(&st.cdev);
     device_destroy(st.cl, st.dev);
     class_destroy(st.cl);
     unregister_chrdev_region(st.dev, DEVICE_MINORS);
     printk(KERN_INFO "module unloaded\n");
 }
+
+module_cleanup(st7565_cleanup);
 
 MODULE_LICENSE("GPL");
 
