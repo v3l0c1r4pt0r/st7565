@@ -13,7 +13,7 @@ static struct st7565 st;
 int init_module()
 {
     int error = -1;
-			//comment out if not debug
+    //comment out if not debug
     /*FIXME:TMP*/
     unsigned char buf[] = "\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
                           " !\"#$%&'()*+,-./0123456789:;<=>?"
@@ -117,7 +117,8 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
                          size_t length,	/* length of the buffer     */
                          loff_t * offset)
 {
-    unsigned long bytes_read;
+    ssize_t bytes_read;
+    printk(KERN_INFO "opened glcd device\n");
 
     /*
      * Number of bytes actually written to the buffer
@@ -126,16 +127,16 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
         length = (loff_t*)st.buffer + LCD_BUFF_SIZE - offset;
 
     /*
-     * Set msgPtr's offset to offset
-     */
-//     msgPtr += offset;
-
-    /*
      * If we're at the end of the message,
      * return 0 signifying end of file
      */
     if (*(offset) == 0)
-        return 0;
+    {
+        bytes_read = 0;
+        goto out;
+    }
+    
+    bytes_read = length;
 
     if(copy_to_user(buffer,
                     offset,
@@ -147,6 +148,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
     /*
      * Most read functions return the number of bytes put into the buffer
      */
+out:
     return bytes_read;
 }
 
