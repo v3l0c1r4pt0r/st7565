@@ -11,7 +11,7 @@
 
 static struct st7565 st;
 
-static int st7565_init()
+static int __init st7565_init(void)
 {
     int error = -1;
     //comment out if not debug
@@ -75,9 +75,8 @@ out:
 
 module_init(st7565_init);
 
-static void __exit st7565_cleanup()
+static void __exit st7565_cleanup(void)
 {
-    printk(KERN_INFO "cleaning...\n");
     cdev_del(&st.cdev);
     device_destroy(st.cl, st.dev);
     class_destroy(st.cl);
@@ -85,7 +84,7 @@ static void __exit st7565_cleanup()
     printk(KERN_INFO "module unloaded\n");
 }
 
-module_cleanup(st7565_cleanup);
+module_exit(st7565_cleanup);
 
 MODULE_LICENSE("GPL");
 
