@@ -18,38 +18,38 @@ static int __init st7565_init(void)
     //comment out if not debug
     /*FIXME:TMP*/
     unsigned char buf[] = //"\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
-                          " !\"#$%&'()*+,-./0123456789:;<=>?"
-                          "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                          "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-			  "e4htewfne8n4guiengeuihfre78bgf87"
-			  "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-			  "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-			  "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-			  ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
-                          " !\"#$%&'()*+,-./0123456789:;<=>?"
-                          "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                          "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-			  "e4htewfne8n4guiengeuihfre78bgf87"
-			  "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-			  "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-			  "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-			  ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
-                          " !\"#$%&'()*+,-./0123456789:;<=>?"
-                          "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                          "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-			  "e4htewfne8n4guiengeuihfre78bgf87"
-			  "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-			  "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-			  "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-			  ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
-                          " !\"#$%&'()*+,-./0123456789:;<=>?"
-                          "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                          "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-			  "e4htewfne8n4guiengeuihfre78bgf87"
-			  "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-			  "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-			  "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-			  ":Llp[p[;p[lplooikKIOPLp[l[lppkok";
+        " !\"#$%&'()*+,-./0123456789:;<=>?"
+        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
+        "e4htewfne8n4guiengeuihfre78bgf87"
+        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
+        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
+        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
+        ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
+        " !\"#$%&'()*+,-./0123456789:;<=>?"
+        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
+        "e4htewfne8n4guiengeuihfre78bgf87"
+        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
+        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
+        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
+        ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
+        " !\"#$%&'()*+,-./0123456789:;<=>?"
+        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
+        "e4htewfne8n4guiengeuihfre78bgf87"
+        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
+        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
+        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
+        ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
+        " !\"#$%&'()*+,-./0123456789:;<=>?"
+        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
+        "e4htewfne8n4guiengeuihfre78bgf87"
+        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
+        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
+        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
+        ":Llp[p[;p[lplooikKIOPLp[l[lppkok";
     memcpy(st.buffer, buf, LCD_BUFF_SIZE);
     /*FIXME:END*/
     static struct file_operations fops =
@@ -71,14 +71,14 @@ static int __init st7565_init(void)
     st.cl = class_create(THIS_MODULE, DEVICE_NAME);
     if(st.cl == NULL)
     {
-    	error = -1;
+        error = -1;
         printk(KERN_ALERT "Class creation failed\n");
         goto unregchr;
     }
     st.device = device_create(st.cl, NULL, st.dev, NULL, DEVICE_NAME);
     if(st.device == NULL)
     {
-    	error = -1;
+        error = -1;
         printk(KERN_ALERT "Device creation failed\n");
         goto destroyclass;
     }
@@ -128,7 +128,7 @@ static int glcd_open(struct inode *inode, struct file *file)
     }
 
     st.dev_opened++;
-    
+
     error = try_module_get(THIS_MODULE);
     if(error == 0)
         return -1;
@@ -193,9 +193,26 @@ out:
 
 static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
-    //TODO: change buffer in memory and send data to ST7565
-    printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
-    return -EINVAL;
+    ssize_t bytes_written;
+    
+    if(len + filp->f_pos > LCD_BUFF_SIZE)
+        len = LCD_BUFF_SIZE - filp->f_pos;
+    
+    if (filp->f_pos == LCD_BUFF_SIZE)
+    {
+        bytes_written = 0;
+        goto out;
+    }
+    
+    bytes_written = len;
+
+    if(copy_from_user(st.buffer + filp->f_pos, buff, len))
+        bytes_written = -EFAULT;
+    
+    //TODO: send data to ST7565
+    
+out:
+    return bytes_written;
 }
 
 static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
@@ -203,18 +220,18 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
     //TODO: update position on ST7565
     switch(whence)
     {
-      case SEEK_SET:
-	filp->f_pos = off;
-	break;
-      case SEEK_CUR:
-	filp->f_pos += off;
-	break;
-      case SEEK_END:
-	filp->f_pos = LCD_BUFF_SIZE + off;
-	break;
-      default:
-	printk(KERN_INFO "I wasn't expected to get here!\n");
-	//FIXME: what about the case when f_pos is beeing set outside of buffer, what would be read then?
+    case SEEK_SET:
+        filp->f_pos = off;
+        break;
+    case SEEK_CUR:
+        filp->f_pos += off;
+        break;
+    case SEEK_END:
+        filp->f_pos = LCD_BUFF_SIZE + off;
+        break;
+    default:
+        printk(KERN_INFO "I wasn't expected to get here!\n");
+        //FIXME: what about the case when f_pos is beeing set outside of buffer, what would be read then?
     }
     return filp->f_pos;
 }
