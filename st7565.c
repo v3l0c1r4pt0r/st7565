@@ -15,43 +15,6 @@ static int __init st7565_init(void)
 {
     int error = -1;
     memset(st.buffer, 0, LCD_BUFF_SIZE);
-    //comment out if not debug
-    /*FIXME:TMP*/
-    unsigned char buf[] = //"\0\1\2\3\4\5\6\7\10\11\12\13\14\15\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37"
-        " !\"#$%&'()*+,-./0123456789:;<=>?"
-        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-        "e4htewfne8n4guiengeuihfre78bgf87"
-        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-        ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
-        " !\"#$%&'()*+,-./0123456789:;<=>?"
-        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-        "e4htewfne8n4guiengeuihfre78bgf87"
-        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-        ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
-        " !\"#$%&'()*+,-./0123456789:;<=>?"
-        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-        "e4htewfne8n4guiengeuihfre78bgf87"
-        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-        ":Llp[p[;p[lplooikKIOPLp[l[lppkok"
-        " !\"#$%&'()*+,-./0123456789:;<=>?"
-        "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-        "`abcdefghijklmnopqrstuvwxyz{|}~\177"
-        "e4htewfne8n4guiengeuihfre78bgf87"
-        "p[dlf][ewo04owe[_{O{)i9pJo9jO[0I"
-        "78hiUG&*G&*g*&g&g*&FG7F6%d%$6d4S"
-        "f%^YTf%d%$ds235s5d6f7&^f^7fG&*(h"
-        ":Llp[p[;p[lplooikKIOPLp[l[lppkok";
-    memcpy(st.buffer, buf, LCD_BUFF_SIZE);
-    /*FIXME:END*/
     static struct file_operations fops =
     {
         .open	= glcd_open,
@@ -61,6 +24,7 @@ static int __init st7565_init(void)
         .llseek	= glcd_llseek
     };
     handle_sysrq('g');	// st7565.ko+0x24 ??
+			//comment out if not debug
     st.fops = &fops;
     error = alloc_chrdev_region(&st.dev, 0, DEVICE_MINORS, DEVICE_NAME);
     if(error < 0)
