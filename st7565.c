@@ -156,6 +156,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
 static ssize_t
 glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
+    //TODO: change buffer in memory and send data to ST7565
     printk(KERN_ALERT "Sorry, this operation isn't supported.\n");
     return -EINVAL;
 }
