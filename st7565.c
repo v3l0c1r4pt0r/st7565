@@ -360,15 +360,25 @@ static int st7565_spi_transfer(u8 byte)
 {
     int error = 0;
     struct spi_transfer spi_transfer =  {
-        .tx_buf = NULL,
+        .tx_buf = NULL,//FIXME
         .rx_buf = NULL,
         .len	= 1
     };
     struct spi_message spi_message;
-    
+
+    if (down_interruptible(&st.spi_sem))
+        return -ERESTARTSYS;
+
+    if (!st.spi_device) {
+        up(&st.spi_sem);
+        return -ENODEV;
+    }
+
     spi_message_init(&spi_message);
     spi_message_add_tail(&spi_transfer, &spi_message);
     error = spi_sync(st.spi_device, &spi_message);
-    
+
+    up(&st.spi_sem);
+
     return error;
 }
