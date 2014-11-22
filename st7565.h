@@ -18,6 +18,8 @@
 #define SPI_BUS		0
 #define SPI_BUS_CS0	0
 #define SPI_BUS_CS1	1
+#define SPI_MAX_SPEED	3815
+//FIXME: speed should be highest possible
 
 struct st7565 {
     dev_t dev;
@@ -28,8 +30,10 @@ struct st7565 {
     unsigned int major;
     int dev_opened;
     unsigned char buffer[LCD_BUFF_SIZE];
-    struct spi_master *spi_master;
+    struct semaphore spi_sem;
+    struct semaphore fop_sem;
     struct spi_device *spi_device;
+    struct spi_driver *spi_driver;
 };
 
 const uint8_t initcmd[] =
@@ -59,3 +63,5 @@ static int st7565_init_lcd(void);
 static void st7565_release_lcd(void);
 static int st7565_init_backlight(void);
 static void st7565_release_backlight(void);
+static int st7565_spi_probe(struct spi_device *spi_device);
+static int st7565_spi_remove(struct spi_device *spi_device);

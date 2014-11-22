@@ -64,6 +64,10 @@ static int __init st7565_init(void)
         goto devicedestroy;
     }
 
+    //initialize semaphores for spi device operations
+    sema_init(&st.spi_sem, 1);
+    sema_init(&st.fop_sem, 1);
+
     error = st7565_init_lcd();
     if(error < 0)
         goto cdevdel;
@@ -221,32 +225,95 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
 
 static int st7565_init_lcd(void)
 {
+    int error = 0;
+    struct spi_master *spi_master;
+    struct spi_device *spi_device;
+    struct device *pdev;
+    char devname[64];
+
     st7565_init_backlight();
     //TODO: initialization procedure
 
-    st.spi_master = spi_busnum_to_master(SPI_BUS);
-    if (!st.spi_master) {
+    static struct spi_driver spi_driver = {
+        .driver = {
+            .name = DEVICE_NAME,
+            .owner = THIS_MODULE,
+        },
+        .probe = st7565_spi_probe,
+        .remove = st7565_spi_remove,
+    };
+
+    st.spi_driver = &spi_driver;
+
+    error = spi_register_driver(st.spi_driver);
+
+    spi_master = spi_busnum_to_master(SPI_BUS);
+    if (!spi_master) {
         printk(KERN_ALERT "SPI controller cannot be found!\n");
         return -1;
     }
 
-    st.spi_device = spi_alloc_device(st.spi_master);
-    if (!st.spi_device) {
-        put_device(&st.spi_master->dev);
-	//TODO
+    spi_device = spi_alloc_device(spi_master);
+    if (!spi_device) {
+        put_device(&spi_master->dev);
+        //TODO
     }
-    
+
     //FIXME: use chipselect according to driver parameter
-    st.spi_device->chip_select = SPI_BUS_CS0;
+    spi_device->chip_select = SPI_BUS_CS0;
+
+    /* Check whether this SPI bus.cs is already claimed */
+    snprintf(devname, sizeof(devname), "%s.%u",
+             dev_name(&spi_device->master->dev),
+             spi_device->chip_select);
+
+    pdev = bus_find_device_by_name(spi_device->dev.bus, NULL, devname);
+    if (pdev) {
+        /* We are not going to use this spi_device, so free it */
+        spi_dev_put(spi_device);
+        /*
+        * There is already a device configured for this bus.cs
+        * It is okay if it us, otherwise complain and fail.
+        */
+        if (pdev->driver && pdev->driver->name &&
+                strcmp(DEVICE_NAME, pdev->driver->name)) {
+            printk(KERN_ALERT
+                   "Driver '%s' already registered for %s\n",
+                   pdev->driver->name, devname);
+            error =  -1;
+            goto out;
+        }
+    } else {
+        spi_device->max_speed_hz = SPI_MAX_SPEED;
+        spi_device->mode = SPI_MODE_0;
+        spi_device->bits_per_word = 8;
+        spi_device->irq = -1;
+        spi_device->controller_state = NULL;
+        spi_device->controller_data = NULL;
+        strlcpy(spi_device->modalias, DEVICE_NAME, SPI_NAME_SIZE);
+        error = spi_add_device(spi_device);
+        if (error < 0) {
+            spi_dev_put(spi_device);
+            printk(KERN_ALERT "spi_add_device() failed: %d\n",
+                   error);
+        }
+    }
+    put_device(&spi_master->dev);
+out:
+    return error;
 }
 
 static void st7565_release_lcd(void)
 {
+    spi_unregister_device(st.spi_device);
+    spi_unregister_driver(st.spi_driver);
+    
     st7565_release_backlight();
 }
 
 static int st7565_init_backlight(void)
 {
+    int error = 0;
     struct gpio gpio = {
         .gpio =		ST7565_BACK,
         .label =	"st7565->back"
@@ -257,6 +324,8 @@ static int st7565_init_backlight(void)
     if(gpio_direction_output(gpio.gpio, 0))
         ;//TODO: fail
     gpio_set_value(gpio.gpio, 1);
+    
+    return error;
 }
 
 static void st7565_release_backlight(void)
@@ -269,3 +338,21 @@ static void st7565_release_backlight(void)
     gpio_set_value(gpio.gpio, 0);
     gpio_free_array(gpiov, 1);
 }
+
+static int st7565_spi_probe(struct spi_device *spi_device)
+{
+    if (down_interruptible(&st.spi_sem))
+        return -EBUSY;
+    st.spi_device = spi_device;
+    up(&st.spi_sem);
+    return 0;
+}
+static int st7565_spi_remove(struct spi_device *spi_device)
+{
+    if (down_interruptible(&st.spi_sem))
+        return -EBUSY;
+    st.spi_device = NULL;
+    up(&st.spi_sem);
+    return 0;
+}
+
