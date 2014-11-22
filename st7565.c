@@ -250,6 +250,7 @@ static int st7565_init_lcd(void)
     spi_master = spi_busnum_to_master(SPI_BUS);
     if (!spi_master) {
         printk(KERN_ALERT "SPI controller cannot be found!\n");
+        spi_unregister_driver(st.spi_driver);
         return -1;
     }
 
