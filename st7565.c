@@ -307,7 +307,7 @@ static void st7565_release_lcd(void)
 {
     spi_unregister_device(st.spi_device);
     spi_unregister_driver(st.spi_driver);
-    
+
     st7565_release_backlight();
 }
 
@@ -324,7 +324,7 @@ static int st7565_init_backlight(void)
     if(gpio_direction_output(gpio.gpio, 0))
         ;//TODO: fail
     gpio_set_value(gpio.gpio, 1);
-    
+
     return error;
 }
 
@@ -356,3 +356,19 @@ static int st7565_spi_remove(struct spi_device *spi_device)
     return 0;
 }
 
+static int st7565_spi_transfer(u8 byte)
+{
+    int error = 0;
+    struct spi_transfer spi_transfer =  {
+        .tx_buf = NULL,
+        .rx_buf = NULL,
+        .len	= 1
+    };
+    struct spi_message spi_message;
+    
+    spi_message_init(&spi_message);
+    spi_message_add_tail(&spi_transfer, &spi_message);
+    error = spi_sync(st.spi_device, &spi_message);
+    
+    return error;
+}
