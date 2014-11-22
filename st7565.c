@@ -5,10 +5,19 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/spi/spi.h>
 #include <linux/sysrq.h>
 #include <asm/uaccess.h>
 
 #include "st7565.h"
+
+/*
+ * 
+ * TODO:
+ * 
+ * - custom pinout as driver params
+ * 
+ */
 
 static struct st7565 st;
 
