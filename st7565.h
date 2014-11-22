@@ -1,6 +1,7 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/fs.h>
+#include <linux/spi/spi.h>
 
 #define SUCCESS		0
 #define DEVICE_NAME	"glcd"
@@ -14,6 +15,10 @@
 #define ST7565_RST	27
 #define ST7565_A0	22
 
+#define SPI_BUS		0
+#define SPI_BUS_CS0	0
+#define SPI_BUS_CS1	1
+
 struct st7565 {
     dev_t dev;
     struct class *cl;
@@ -23,6 +28,8 @@ struct st7565 {
     unsigned int major;
     int dev_opened;
     unsigned char buffer[LCD_BUFF_SIZE];
+    struct spi_master *spi_master;
+    struct spi_device *spi_device;
 };
 
 const uint8_t initcmd[] =
@@ -48,5 +55,7 @@ static ssize_t glcd_read(struct file *filp, char *buffer, size_t length, loff_t 
 static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off);
 static loff_t glcd_llseek(struct file* filp, loff_t off, int whence);
 
-static void st7565_init_lcd(void);
+static int st7565_init_lcd(void);
 static void st7565_release_lcd(void);
+static int st7565_init_backlight(void);
+static void st7565_release_backlight(void);

@@ -12,11 +12,11 @@
 #include "st7565.h"
 
 /*
- * 
+ *
  * TODO:
- * 
+ *
  * - custom pinout as driver params
- * 
+ *
  */
 
 static struct st7565 st;
@@ -64,10 +64,14 @@ static int __init st7565_init(void)
         goto devicedestroy;
     }
 
-    st7565_init_lcd();
+    error = st7565_init_lcd();
+    if(error < 0)
+        goto cdevdel;
 
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
+cdevdel:
+    cdev_del(&st.cdev);
 devicedestroy:
     device_destroy(st.cl, st.dev);
 destroyclass:
@@ -215,9 +219,34 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
     return filp->f_pos;
 }
 
-static void st7565_init_lcd(void)
+static int st7565_init_lcd(void)
 {
+    st7565_init_backlight();
     //TODO: initialization procedure
+
+    st.spi_master = spi_busnum_to_master(SPI_BUS);
+    if (!st.spi_master) {
+        printk(KERN_ALERT "SPI controller cannot be found!\n");
+        return -1;
+    }
+
+    st.spi_device = spi_alloc_device(st.spi_master);
+    if (!st.spi_device) {
+        put_device(&st.spi_master->dev);
+	//TODO
+    }
+    
+    //FIXME: use chipselect according to driver parameter
+    st.spi_device->chip_select = SPI_BUS_CS0;
+}
+
+static void st7565_release_lcd(void)
+{
+    st7565_release_backlight();
+}
+
+static int st7565_init_backlight(void)
+{
     struct gpio gpio = {
         .gpio =		ST7565_BACK,
         .label =	"st7565->back"
@@ -230,7 +259,7 @@ static void st7565_init_lcd(void)
     gpio_set_value(gpio.gpio, 1);
 }
 
-static void st7565_release_lcd(void)
+static void st7565_release_backlight(void)
 {
     struct gpio gpio = {
         .gpio =		ST7565_BACK,
