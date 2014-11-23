@@ -232,7 +232,6 @@ static int st7565_init_lcd(void)
     char devname[64];
 
     st7565_init_backlight();
-    //TODO: initialization procedure
 
     static struct spi_driver spi_driver = {
         .driver = {
