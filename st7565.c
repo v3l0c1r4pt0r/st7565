@@ -205,7 +205,6 @@ out:
 
 static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
 {
-    //TODO: update position on ST7565
     switch(whence)
     {
     case SEEK_SET:
@@ -221,6 +220,15 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
         printk(KERN_INFO "I wasn't expected to get here!\n");
         //FIXME: what about the case when f_pos is beeing set outside of buffer, what would be read then?
     }
+    
+    //set location on screen
+    u8 page = filp->f_pos / LCD_WIDTH;
+    u8 column = filp->f_pos % LCD_WIDTH;
+    
+    st7565_spi_transfer(0xb0 | page, ST7565_CMD);			//set page
+    st7565_spi_transfer(0x10 | ((0xf0 & column)>>4),ST7565_CMD);	//set 4 msb's of column
+    st7565_spi_transfer(0x0f & column,ST7565_CMD);			//set 4 lsb's of column
+    
     return filp->f_pos;
 }
 
