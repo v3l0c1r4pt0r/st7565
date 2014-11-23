@@ -71,6 +71,7 @@ static int st7565_init_lcd(void);
 static void st7565_release_lcd(void);
 static int st7565_init_backlight(void);
 static void st7565_release_backlight(void);
+static void st7565_set_position(loff_t pos);
 
 static int st7565_spi_init(void);
 static int st7565_spi_probe(struct spi_device *spi_device);

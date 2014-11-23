@@ -182,6 +182,7 @@ out:
 static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
     ssize_t bytes_written;
+    int i;
 
     if(len + filp->f_pos > LCD_BUFF_SIZE)
         len = LCD_BUFF_SIZE - filp->f_pos;
@@ -197,7 +198,12 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
     if(copy_from_user(st.buffer + filp->f_pos, buff, len))
         bytes_written = -EFAULT;
 
-    //TODO: send data to ST7565
+    //set location on screen
+    st7565_set_position(filp->f_pos);
+    
+    //send buffer to screen
+    for(i = 0; i < len; i++)
+      st7565_spi_transfer((st.buffer + filp->f_pos)[i], ST7565_DATA);
 
 out:
     return bytes_written;
@@ -222,14 +228,19 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
     }
     
     //set location on screen
-    u8 page = filp->f_pos / LCD_WIDTH;
-    u8 column = filp->f_pos % LCD_WIDTH;
+    st7565_set_position(filp->f_pos);
+    
+    return filp->f_pos;
+}
+
+static void st7565_set_position(loff_t pos)
+{
+    u8 page = pos / LCD_WIDTH;
+    u8 column = pos % LCD_WIDTH;
     
     st7565_spi_transfer(0xb0 | page, ST7565_CMD);			//set page
     st7565_spi_transfer(0x10 | ((0xf0 & column)>>4),ST7565_CMD);	//set 4 msb's of column
     st7565_spi_transfer(0x0f & column,ST7565_CMD);			//set 4 lsb's of column
-    
-    return filp->f_pos;
 }
 
 static int st7565_init_lcd(void)
