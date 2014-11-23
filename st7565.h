@@ -11,7 +11,7 @@
 #define LCD_BUFF_SIZE	(LCD_WIDTH * LCD_HEIGHT / 8)
 
 #define ST7565_BACK	2
-#define ST7565_CS	17
+// #define ST7565_CS	17
 #define ST7565_RST	27
 #define ST7565_A0	22
 
@@ -20,6 +20,12 @@
 #define SPI_BUS_CS1	1
 #define SPI_MAX_SPEED	3815
 //FIXME: speed should be highest possible
+
+#define GPIO_A0		0
+#define GPIO_RST	1
+
+#define ST7565_CMD	0
+#define ST7565_DATA	1
 
 struct st7565 {
     dev_t dev;
@@ -34,6 +40,8 @@ struct st7565 {
     struct semaphore fop_sem;
     struct spi_device *spi_device;
     struct spi_driver *spi_driver;
+    struct gpio *gpiov;
+    int gpioc;
 };
 
 const uint8_t initcmd[] =
@@ -64,7 +72,8 @@ static void st7565_release_lcd(void);
 static int st7565_init_backlight(void);
 static void st7565_release_backlight(void);
 
+static int st7565_spi_init(void);
 static int st7565_spi_probe(struct spi_device *spi_device);
 static int st7565_spi_remove(struct spi_device *spi_device);
 
-static int st7565_spi_transfer(u8 byte);
+static int st7565_spi_transfer(u8 byte, int a0);

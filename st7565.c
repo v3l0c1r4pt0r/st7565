@@ -7,6 +7,7 @@
 #include <linux/slab.h>
 #include <linux/spi/spi.h>
 #include <linux/sysrq.h>
+#include <asm/delay.h>
 #include <asm/uaccess.h>
 
 #include "st7565.h"
@@ -226,13 +227,112 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
 static int st7565_init_lcd(void)
 {
     int error = 0;
+    int i;
+
+    st7565_init_backlight();
+    error = st7565_spi_init();
+    if(error < 0)
+        goto out;
+
+    //init a0, rst pins
+    static struct gpio gpiov[] = {
+        {
+            .gpio =		ST7565_A0,
+            .label =	"st7565->a0"
+        },
+        {
+            .gpio =		ST7565_RST,
+            .label =	"st7565->rst"
+        }
+    };
+    st.gpioc = 2;
+    st.gpiov = gpiov;
+
+    if(gpio_request_array(st.gpiov, st.gpioc))
+    {
+        error = -1;
+        goto out;
+    }
+
+    //set pin direction to out
+    for(i = 0; i < st.gpioc; i++)
+    {
+        if(gpio_direction_output(st.gpiov[i].gpio, 0))
+        {
+            error = -1;
+            gpio_free_array(st.gpiov,st.gpioc);
+            goto out;
+        }
+    }
+
+    //hardware reset lcd
+    udelay(1);
+    gpio_set_value(st.gpiov[GPIO_RST].gpio, 1);
+
+    for(i = 0; i < sizeof(initcmd); i++)
+    {
+        error = st7565_spi_transfer(initcmd[i], ST7565_CMD);
+        if(error < 0)
+        {
+            gpio_free_array(st.gpiov,st.gpioc);
+            goto out;
+        }
+    }
+out:
+    return error;
+}
+
+static void st7565_release_lcd(void)
+{
+    spi_unregister_device(st.spi_device);
+    spi_unregister_driver(st.spi_driver);
+
+    st7565_release_backlight();
+    gpio_free_array(st.gpiov, st.gpioc);
+}
+
+static int st7565_init_backlight(void)
+{
+    int error = 0;
+    struct gpio gpio = {
+        .gpio =		ST7565_BACK,
+        .label =	"st7565->back"
+    };
+    struct gpio gpiov[] = {gpio};
+    if(gpio_request_array(gpiov, 1))
+    {
+        error = -1;
+        goto out;
+    }
+    if(gpio_direction_output(gpio.gpio, 0))
+    {
+        error = -1;
+        goto out;
+    }
+    gpio_set_value(gpio.gpio, 1);
+
+out:
+    return error;
+}
+
+static void st7565_release_backlight(void)
+{
+    struct gpio gpio = {
+        .gpio =		ST7565_BACK,
+        .label =	"st7565->back"
+    };
+    struct gpio gpiov[] = {gpio};
+    gpio_set_value(gpio.gpio, 0);
+    gpio_free_array(gpiov, 1);
+}
+
+static int st7565_spi_init(void)
+{
+    int error = 0;
     struct spi_master *spi_master;
     struct spi_device *spi_device;
     struct device *pdev;
     char devname[64];
-
-    st7565_init_backlight();
-
     static struct spi_driver spi_driver = {
         .driver = {
             .name = DEVICE_NAME,
@@ -303,42 +403,6 @@ out:
     return error;
 }
 
-static void st7565_release_lcd(void)
-{
-    spi_unregister_device(st.spi_device);
-    spi_unregister_driver(st.spi_driver);
-
-    st7565_release_backlight();
-}
-
-static int st7565_init_backlight(void)
-{
-    int error = 0;
-    struct gpio gpio = {
-        .gpio =		ST7565_BACK,
-        .label =	"st7565->back"
-    };
-    struct gpio gpiov[] = {gpio};
-    if(gpio_request_array(gpiov, 1))
-        ;//TODO: fail
-    if(gpio_direction_output(gpio.gpio, 0))
-        ;//TODO: fail
-    gpio_set_value(gpio.gpio, 1);
-
-    return error;
-}
-
-static void st7565_release_backlight(void)
-{
-    struct gpio gpio = {
-        .gpio =		ST7565_BACK,
-        .label =	"st7565->back"
-    };
-    struct gpio gpiov[] = {gpio};
-    gpio_set_value(gpio.gpio, 0);
-    gpio_free_array(gpiov, 1);
-}
-
 static int st7565_spi_probe(struct spi_device *spi_device)
 {
     if (down_interruptible(&st.spi_sem))
@@ -356,11 +420,11 @@ static int st7565_spi_remove(struct spi_device *spi_device)
     return 0;
 }
 
-static int st7565_spi_transfer(u8 byte)
+static int st7565_spi_transfer(u8 byte, int a0)
 {
     int error = 0;
     struct spi_transfer spi_transfer =  {
-        .tx_buf = NULL,//FIXME
+        .tx_buf = &byte,
         .rx_buf = NULL,
         .len	= 1
     };
@@ -376,7 +440,17 @@ static int st7565_spi_transfer(u8 byte)
 
     spi_message_init(&spi_message);
     spi_message_add_tail(&spi_transfer, &spi_message);
+
+    //set a0 state
+    gpio_set_value(st.gpiov[GPIO_A0].gpio, a0);
+
     error = spi_sync(st.spi_device, &spi_message);
+
+    //reverse a0 state
+    if(a0)
+        gpio_set_value(st.gpiov[GPIO_A0].gpio, 0);
+    else
+        gpio_set_value(st.gpiov[GPIO_A0].gpio, 1);
 
     up(&st.spi_sem);
 
