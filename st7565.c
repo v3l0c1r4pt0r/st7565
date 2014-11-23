@@ -17,6 +17,7 @@
  * TODO:
  *
  * - custom pinout as driver params
+ * - sysfs configuration (like brightness, backlight on/off, etc.)
  *
  */
 
