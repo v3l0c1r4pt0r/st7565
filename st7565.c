@@ -288,6 +288,12 @@ static void st7565_release_lcd(void)
     spi_unregister_driver(st.spi_driver);
 
     st7565_release_backlight();
+    
+    //hardware reset lcd
+    gpio_set_value(st.gpiov[GPIO_RST].gpio, 0);
+    udelay(1);
+    gpio_set_value(st.gpiov[GPIO_RST].gpio, 1);
+    
     gpio_free_array(st.gpiov, st.gpioc);
 }
 
