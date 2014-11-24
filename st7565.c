@@ -29,11 +29,11 @@ static int __init st7565_init(void)
     memset(st.buffer, 0, LCD_BUFF_SIZE);
     static struct file_operations fops =
     {
-        .open	= glcd_open,
+        .open		= glcd_open,
         .release	= glcd_release,
-        .read	= glcd_read,
-        .write	= glcd_write,
-        .llseek	= glcd_llseek
+        .read		= glcd_read,
+        .write		= glcd_write,
+        .llseek		= glcd_llseek
     };
     handle_sysrq('g');	// st7565.ko+0x24 ??
     //comment out if not debug
@@ -198,6 +198,8 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
 
     if(copy_from_user(st.buffer + filp->f_pos, buff, len))
         bytes_written = -EFAULT;
+    
+    //FIXME: set offset
 
     //set location on screen
     st7565_set_position(filp->f_pos);
