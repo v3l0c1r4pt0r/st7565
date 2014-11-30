@@ -6,6 +6,7 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/spi/spi.h>
+#include <linux/sysfs.h>
 #include <linux/sysrq.h>
 #include <asm/delay.h>
 #include <asm/uaccess.h>
@@ -73,6 +74,17 @@ static int __init st7565_init(void)
     error = st7565_init_lcd();
     if(error < 0)
         goto cdevdel;
+    
+    //TODO: create attributes in sysfs
+    /*struct device_attribute backlight = {
+      .attr = {
+	.name = "backlight",
+	.mode = S_IRUSR
+      },
+      .show = NULL,
+      .store = NULL
+    };
+    device_create_file(st.device, );*/
 
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
