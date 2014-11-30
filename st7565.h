@@ -42,6 +42,8 @@ struct st7565 {
     struct spi_driver *spi_driver;
     struct gpio *gpiov;
     int gpioc;
+    struct device_attribute *backlight;
+    int backlight_state;
 };
 
 const uint8_t initcmd[] =
@@ -78,3 +80,6 @@ static int st7565_spi_probe(struct spi_device *spi_device);
 static int st7565_spi_remove(struct spi_device *spi_device);
 
 static int st7565_spi_transfer(u8 byte, int a0);
+
+ssize_t st7565_backlight_show(struct device *dev, struct device_attribute *attr, char *buf);
+ssize_t st7565_backlight_store(struct kobject *dev, struct attribute *attr, const char *buf, size_t count);

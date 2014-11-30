@@ -6,6 +6,7 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/spi/spi.h>
+#include <linux/stat.h>
 #include <linux/sysfs.h>
 #include <linux/sysrq.h>
 #include <asm/delay.h>
@@ -74,20 +75,28 @@ static int __init st7565_init(void)
     error = st7565_init_lcd();
     if(error < 0)
         goto cdevdel;
-    
+
     //TODO: create attributes in sysfs
-    /*struct device_attribute backlight = {
-      .attr = {
-	.name = "backlight",
-	.mode = S_IRUSR
-      },
-      .show = NULL,
-      .store = NULL
+    static struct device_attribute backlight = {
+        .attr = {
+            .name = "backlight",
+            .mode = S_IRUSR | S_IWUSR
+        },
+        .show = st7565_backlight_show,
+        .store = st7565_backlight_store
     };
-    device_create_file(st.device, );*/
+    st.backlight = &backlight;
+    error = device_create_file(st.device, st.backlight);
+    if(error < 0)
+    {
+        printk(KERN_ALERT "Creating backlight adjustment attribute failed with %d\n", error);
+        goto backllrem;
+    }
 
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
+backllrem:
+    device_remove_file(st.device, st.backlight);
 cdevdel:
     cdev_del(&st.cdev);
 devicedestroy:
@@ -107,6 +116,7 @@ static void __exit st7565_cleanup(void)
 {
     st7565_release_lcd();
 
+    device_remove_file(st.device, st.backlight);
     cdev_del(&st.cdev);
     device_destroy(st.cl, st.dev);
     class_destroy(st.cl);
@@ -210,15 +220,15 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
 
     if(copy_from_user(st.buffer + filp->f_pos, buff, len))
         bytes_written = -EFAULT;
-    
+
     //FIXME: set offset
 
     //set location on screen
     st7565_set_position(filp->f_pos);
-    
+
     //send buffer to screen
     for(i = 0; i < len; i++)
-      st7565_spi_transfer((st.buffer + filp->f_pos)[i], ST7565_DATA);
+        st7565_spi_transfer((st.buffer + filp->f_pos)[i], ST7565_DATA);
 
 out:
     return bytes_written;
@@ -241,10 +251,10 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
         printk(KERN_INFO "I wasn't expected to get here!\n");
         //FIXME: what about the case when f_pos is beeing set outside of buffer, what would be read then?
     }
-    
+
     //set location on screen
     st7565_set_position(filp->f_pos);
-    
+
     return filp->f_pos;
 }
 
@@ -252,7 +262,7 @@ static void st7565_set_position(loff_t pos)
 {
     u8 page = pos / LCD_WIDTH;
     u8 column = pos % LCD_WIDTH;
-    
+
     st7565_spi_transfer(0xb0 | page, ST7565_CMD);			//set page
     st7565_spi_transfer(0x10 | ((0xf0 & column)>>4),ST7565_CMD);	//set 4 msb's of column
     st7565_spi_transfer(0x0f & column,ST7565_CMD);			//set 4 lsb's of column
@@ -269,7 +279,7 @@ static int st7565_init_lcd(void)
         goto out;
 
     //init a0, rst pins
-    static struct gpio gpiov[] = {
+    static struct gpio gpiov[] = {//FIXME: save struct addr in st7565 struct
         {
             .gpio =		ST7565_A0,
             .label =	"st7565->a0"
@@ -322,12 +332,12 @@ static void st7565_release_lcd(void)
     spi_unregister_driver(st.spi_driver);
 
     st7565_release_backlight();
-    
+
     //hardware reset lcd
     gpio_set_value(st.gpiov[GPIO_RST].gpio, 0);
     udelay(1);
     gpio_set_value(st.gpiov[GPIO_RST].gpio, 1);
-    
+
     gpio_free_array(st.gpiov, st.gpioc);
 }
 
@@ -350,6 +360,8 @@ static int st7565_init_backlight(void)
         goto out;
     }
     gpio_set_value(gpio.gpio, 1);
+
+    st.backlight_state = 1;
 
 out:
     return error;
@@ -495,4 +507,28 @@ static int st7565_spi_transfer(u8 byte, int a0)
     up(&st.spi_sem);
 
     return error;
+}
+
+ssize_t st7565_backlight_show(struct device *dev, struct device_attribute *attr,
+                              char *buf)
+{
+    return sprintf(buf, "%d\n", st.backlight_state);
+}
+
+ssize_t st7565_backlight_store(struct kobject *dev, struct attribute *attr, const char *buf, size_t count)
+{
+    int state;
+    struct gpio gpio = {
+        .gpio =		ST7565_BACK,
+        .label =	"st7565->back"
+    };
+    if(sscanf(buf, "%d\n", &state) == 1 && state <= 1)
+    {
+        gpio_set_value(gpio.gpio, state);
+        st.backlight_state = state;
+
+        return count;
+    }
+    else
+        return -EINVAL;
 }
