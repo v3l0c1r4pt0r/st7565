@@ -90,7 +90,7 @@ static int __init st7565_init(void)
     if(error < 0)
     {
         printk(KERN_ALERT "Creating backlight adjustment attribute failed with %d\n", error);
-        goto backllrem;
+        goto cdevdel;
     }
 
     printk(KERN_INFO "module loaded\n");
