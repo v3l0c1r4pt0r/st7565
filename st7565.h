@@ -18,7 +18,7 @@
 #define SPI_BUS		0
 #define SPI_BUS_CS0	0
 #define SPI_BUS_CS1	1
-#define SPI_MAX_SPEED	3815
+#define SPI_MAX_SPEED	62600000
 //FIXME: speed should be highest possible
 
 #define GPIO_A0		0
