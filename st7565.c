@@ -221,7 +221,7 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
     if(copy_from_user(st.buffer + filp->f_pos, buff, len))
         bytes_written = -EFAULT;
 
-    //FIXME: set offset
+    *off += len;
 
     //set location on screen
     st7565_set_position(filp->f_pos);
@@ -229,8 +229,9 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
     //send buffer to screen
     for(i = 0; i < len; i++)
     {
-        //TODO: change line when crossing LCD_WIDTH
         st7565_spi_transfer((st.buffer + filp->f_pos)[i], ST7565_DATA);
+	if(filp->f_pos + i % LCD_WIDTH == 0)
+	  st7565_set_position(filp->f_pos + i);
     }
 
 out:
@@ -327,13 +328,13 @@ static int st7565_init_lcd(void)
         }
     }
 
-    //clear st7565 buffer
-//     for(i = 0; i < LCD_HEIGHT; i++)
-//     {
-// 	st7565_set_position(LCD_HEIGHT * i);
-//         for(j = 0; j < LCD_WIDTH; j++)
-//             st7565_spi_transfer(0,ST7565_DATA);
-//     }//FIXME: lasts too long
+    clear st7565 buffer
+    for(i = 0; i < LCD_HEIGHT; i++)
+    {
+	st7565_set_position(LCD_HEIGHT * i);
+        for(j = 0; j < LCD_WIDTH; j++)
+            st7565_spi_transfer(0,ST7565_DATA);
+    }//FIXME: check
 out:
     return error;
 }
