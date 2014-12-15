@@ -328,7 +328,7 @@ static int st7565_init_lcd(void)
         }
     }
 
-    clear st7565 buffer
+    //clear st7565 buffer
     for(i = 0; i < LCD_HEIGHT; i++)
     {
 	st7565_set_position(LCD_HEIGHT * i);
