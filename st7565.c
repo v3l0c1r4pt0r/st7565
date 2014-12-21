@@ -166,7 +166,6 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
                          loff_t * offset)
 {
     ssize_t bytes_read;
-    printk(KERN_INFO "reading glcd device\n");
 
     /*
      * Number of bytes actually written to the buffer
