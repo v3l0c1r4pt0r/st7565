@@ -19,7 +19,6 @@
 #define SPI_BUS_CS0	0
 #define SPI_BUS_CS1	1
 #define SPI_MAX_SPEED	62600000
-//FIXME: speed should be highest possible
 
 #define GPIO_A0		0
 #define GPIO_RST	1
@@ -49,7 +48,7 @@ struct st7565 {
 const uint8_t initcmd[] =
 {
     0xa1,							//screen orientation
-    0x41,							//set starting line
+    0x40,							//set starting line
     0xc0,							//page count direction
     0xa3,							//1/7 bias
     0x2c,							//vc

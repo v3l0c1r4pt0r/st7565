@@ -232,6 +232,7 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
 	if(filp->f_pos + i % LCD_WIDTH == 0)
 	  st7565_set_position(filp->f_pos + i);
     }
+    //FIXME: writing outside of buffer causes Oops
 
 out:
     return bytes_written;
