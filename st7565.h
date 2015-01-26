@@ -22,6 +22,7 @@
 
 #define GPIO_A0		0
 #define GPIO_RST	1
+#define GPIO_BACK	2
 
 #define ST7565_CMD	0
 #define ST7565_DATA	1

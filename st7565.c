@@ -76,7 +76,7 @@ static int __init st7565_init(void)
     if(error < 0)
         goto cdevdel;
 
-    //TODO: create attributes in sysfs
+    //create attributes in sysfs
     static struct device_attribute backlight = {
         .attr = {
             .name = "backlight",
@@ -170,10 +170,9 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
     /*
      * Number of bytes actually written to the buffer
      */
-// printk(KERN_INFO "length: 0x%X; buffer: 0x%X; fpos: 0x%X\n", length, st.buffer, filp->f_pos);
     if(length + filp->f_pos > LCD_BUFF_SIZE)
         length = LCD_BUFF_SIZE - filp->f_pos;
-// printk(KERN_INFO "length: 0x%X; buffer: 0x%X; fpos: 0x%X\n", length, st.buffer, filp->f_pos);
+    
     /*
      * If we're at the end of the message,
      * return 0 signifying end of file
@@ -183,7 +182,6 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
         bytes_read = 0;
         goto out;
     }
-//     printk(KERN_INFO "%c, %c", *(st.buffer), *(st.buffer + filp->f_pos));
 
     bytes_read = length;
 
@@ -209,7 +207,7 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
     if(len + filp->f_pos > LCD_BUFF_SIZE)
         len = LCD_BUFF_SIZE - filp->f_pos;
 
-    if (filp->f_pos == LCD_BUFF_SIZE)
+    if (filp->f_pos >= LCD_BUFF_SIZE)
     {
         bytes_written = 0;
         goto out;
@@ -232,7 +230,6 @@ static ssize_t glcd_write(struct file *filp, const char *buff, size_t len, loff_
 	if(filp->f_pos + i % LCD_WIDTH == 0)
 	  st7565_set_position(filp->f_pos + i);
     }
-    //FIXME: writing outside of buffer causes Oops
 
 out:
     return bytes_written;
@@ -253,7 +250,6 @@ static loff_t glcd_llseek(struct file * filp, loff_t off, int whence)
         break;
     default:
         printk(KERN_INFO "I wasn't expected to get here!\n");
-        //FIXME: what about the case when f_pos is beeing set outside of buffer, what would be read then?
     }
 
     //set location on screen
@@ -283,17 +279,21 @@ static int st7565_init_lcd(void)
         goto out;
 
     //init a0, rst pins
-    static struct gpio gpiov[] = {//FIXME: save struct addr in st7565 struct
+    static struct gpio gpiov[] = {
         {
-            .gpio =		ST7565_A0,
+            .gpio =	ST7565_A0,
             .label =	"st7565->a0"
         },
         {
-            .gpio =		ST7565_RST,
+            .gpio =	ST7565_RST,
             .label =	"st7565->rst"
-        }
+        },
+	{
+	    .gpio =	ST7565_BACK,
+	    .label =	"st7565->back"
+	}
     };
-    st.gpioc = 2;
+    st.gpioc = 3;
     st.gpiov = gpiov;
 
     if(gpio_request_array(st.gpiov, st.gpioc))
@@ -357,22 +357,7 @@ static void st7565_release_lcd(void)
 static int st7565_init_backlight(void)
 {
     int error = 0;
-    struct gpio gpio = {
-        .gpio =		ST7565_BACK,
-        .label =	"st7565->back"
-    };
-    struct gpio gpiov[] = {gpio};
-    if(gpio_request_array(gpiov, 1))
-    {
-        error = -1;
-        goto out;
-    }
-    if(gpio_direction_output(gpio.gpio, 0))
-    {
-        error = -1;
-        goto out;
-    }
-    gpio_set_value(gpio.gpio, 1);
+    gpio_set_value(st.gpiov[GPIO_BACK].gpio, 1);
 
     st.backlight_state = 1;
 
@@ -382,13 +367,7 @@ out:
 
 static void st7565_release_backlight(void)
 {
-    struct gpio gpio = {
-        .gpio =		ST7565_BACK,
-        .label =	"st7565->back"
-    };
-    struct gpio gpiov[] = {gpio};
-    gpio_set_value(gpio.gpio, 0);
-    gpio_free_array(gpiov, 1);
+    gpio_set_value(st.gpiov[GPIO_BACK].gpio, 0);
 }
 
 static int st7565_spi_init(void)
