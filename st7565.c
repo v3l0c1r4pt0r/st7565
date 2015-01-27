@@ -114,7 +114,6 @@ static int __init st7565_init(void)
         goto backllrem;
     }
 
-    printk(KERN_INFO "module loaded\n");
     return SUCCESS;
     
     device_remove_file(st.device, st.brightness);
@@ -129,7 +128,6 @@ destroyclass:
 unregchr:
     unregister_chrdev_region(st.dev, DEVICE_MINORS);
 out:
-    printk(KERN_INFO "module cannot be loaded\n");
     return error;
 }
 
@@ -144,7 +142,6 @@ static void __exit st7565_cleanup(void)
     device_destroy(st.cl, st.dev);
     class_destroy(st.cl);
     unregister_chrdev_region(st.dev, DEVICE_MINORS);
-    printk(KERN_INFO "module unloaded\n");
 }
 
 module_exit(st7565_cleanup);
@@ -154,7 +151,6 @@ MODULE_LICENSE("GPL");
 static int glcd_open(struct inode *inode, struct file *file)
 {
     int error = -1;
-    printk(KERN_INFO "opened glcd device\n");
 
     if (st.dev_opened)
     {
