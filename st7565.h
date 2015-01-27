@@ -27,6 +27,8 @@
 #define ST7565_CMD	0
 #define ST7565_DATA	1
 
+#define BRIGHTNESS_MASK	0x3f
+
 struct st7565 {
     dev_t dev;
     struct class *cl;
@@ -44,6 +46,8 @@ struct st7565 {
     int gpioc;
     struct device_attribute *backlight;
     int backlight_state;
+    struct device_attribute *brightness;
+    int brightness_state;
 };
 
 const uint8_t initcmd[] =
@@ -83,3 +87,6 @@ static int st7565_spi_transfer(u8 byte, int a0);
 
 ssize_t st7565_backlight_show(struct device *dev, struct device_attribute *attr, char *buf);
 ssize_t st7565_backlight_store(struct kobject *dev, struct attribute *attr, const char *buf, size_t count);
+
+ssize_t st7565_brightness_show(struct device *dev, struct device_attribute *attr, char *buf);
+ssize_t st7565_brightness_store(struct kobject *dev, struct attribute *attr, const char *buf, size_t count);

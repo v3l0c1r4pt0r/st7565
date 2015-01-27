@@ -18,12 +18,24 @@
  *
  * TODO:
  *
- * - custom pinout as driver params
- * - sysfs configuration (like brightness, backlight on/off, etc.)
+ * - get rid of warnings
  *
  */
 
 static struct st7565 st;
+
+/*
+ * module params
+ */
+static u8 chip_select = SPI_BUS_CS0;
+static unsigned a0_gpio_num = 22;
+static unsigned rst_gpio_num = 27;
+static unsigned backlight_gpio_num = 2;
+
+module_param(chip_select, int, S_IRUGO);
+module_param(a0_gpio_num, int, S_IRUGO);
+module_param(rst_gpio_num, int, S_IRUGO);
+module_param(backlight_gpio_num, int, S_IRUGO);
 
 static int __init st7565_init(void)
 {
@@ -76,7 +88,7 @@ static int __init st7565_init(void)
     if(error < 0)
         goto cdevdel;
 
-    //create attributes in sysfs
+    //create attribute for backlight diode in sysfs
     static struct device_attribute backlight = {
         .attr = {
             .name = "backlight",
@@ -93,8 +105,27 @@ static int __init st7565_init(void)
         goto cdevdel;
     }
 
+    //create attribute for brightness regulation in sysfs
+    static struct device_attribute brightness = {
+        .attr = {
+            .name = "brightness",
+            .mode = S_IRUSR | S_IWUSR
+        },
+        .show = st7565_brightness_show,
+        .store = st7565_brightness_store
+    };
+    st.brightness = &brightness;
+    error = device_create_file(st.device, st.backlight);
+    if(error < 0)
+    {
+        printk(KERN_ALERT "Creating brighntess adjustment attribute failed with %d\n", error);
+        goto backllrem;
+    }
+
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
+bnessrem:
+    device_remove_file(st.device, st.brightness);
 backllrem:
     device_remove_file(st.device, st.backlight);
 cdevdel:
@@ -177,7 +208,7 @@ static ssize_t glcd_read(struct file *filp,	/* see include/linux/fs.h   */
      * If we're at the end of the message,
      * return 0 signifying end of file
      */
-    if (filp->f_pos == LCD_BUFF_SIZE)
+    if (filp->f_pos >= LCD_BUFF_SIZE)
     {
         bytes_read = 0;
         goto out;
@@ -273,12 +304,11 @@ static int st7565_init_lcd(void)
     int error = 0;
     int i, j;
 
-    st7565_init_backlight();
     error = st7565_spi_init();
     if(error < 0)
         goto out;
 
-    //init a0, rst pins
+    //init a0, rst, backlight pins
     static struct gpio gpiov[] = {
         {
             .gpio =	ST7565_A0,
@@ -293,6 +323,11 @@ static int st7565_init_lcd(void)
 	    .label =	"st7565->back"
 	}
     };
+    
+    gpiov[GPIO_A0].gpio = a0_gpio_num;
+    gpiov[GPIO_RST].gpio = rst_gpio_num;
+    gpiov[GPIO_BACK].gpio = backlight_gpio_num;
+    
     st.gpioc = 3;
     st.gpiov = gpiov;
 
@@ -312,6 +347,8 @@ static int st7565_init_lcd(void)
             goto out;
         }
     }
+    
+    st7565_init_backlight();
 
     //hardware reset lcd
     udelay(1);
@@ -327,6 +364,9 @@ static int st7565_init_lcd(void)
             goto out;
         }
     }
+    
+    //remember brightness value in st7565 struct
+    st.brightness_state = 0x18;
 
     //clear st7565 buffer
     for(i = 0; i < LCD_HEIGHT; i++)
@@ -334,7 +374,7 @@ static int st7565_init_lcd(void)
 	st7565_set_position(LCD_HEIGHT * i);
         for(j = 0; j < LCD_WIDTH; j++)
             st7565_spi_transfer(0,ST7565_DATA);
-    }//FIXME: check
+    }
 out:
     return error;
 }
@@ -400,11 +440,10 @@ static int st7565_spi_init(void)
     spi_device = spi_alloc_device(spi_master);
     if (!spi_device) {
         put_device(&spi_master->dev);
-        //TODO
+	//FIXME: somethings wrong here
     }
 
-    //FIXME: use chipselect according to driver parameter
-    spi_device->chip_select = SPI_BUS_CS0;
+    spi_device->chip_select = chip_select;
 
     /* Check whether this SPI bus.cs is already claimed */
     snprintf(devname, sizeof(devname), "%s.%u",
@@ -510,14 +549,38 @@ ssize_t st7565_backlight_show(struct device *dev, struct device_attribute *attr,
 ssize_t st7565_backlight_store(struct kobject *dev, struct attribute *attr, const char *buf, size_t count)
 {
     int state;
-    struct gpio gpio = {
-        .gpio =		ST7565_BACK,
-        .label =	"st7565->back"
-    };
     if(sscanf(buf, "%d\n", &state) == 1 && state <= 1)
     {
-        gpio_set_value(gpio.gpio, state);
+        gpio_set_value(st.gpiov[GPIO_A0].gpio, state);
         st.backlight_state = state;
+
+        return count;
+    }
+    else
+        return -EINVAL;
+}
+
+ssize_t st7565_brightness_show(struct device *dev, struct device_attribute *attr,
+                              char *buf)
+{
+    return sprintf(buf, "%d\n", st.brightness_state);
+}
+
+ssize_t st7565_brightness_store(struct kobject *dev, struct attribute *attr, const char *buf, size_t count)
+{
+    int state;
+    int error;
+    if(sscanf(buf, "%d\n", &state) == 1 && state >= 0 && state < 0x40)
+    {
+        //send brightness to lcd
+        error = st7565_spi_transfer(0x81, ST7565_CMD);
+	if(error < 0)
+	  return -EINVAL;
+        error = st7565_spi_transfer(state, ST7565_CMD);
+	if(error < 0)
+	  return -EINVAL;
+	
+        st.brightness_state = state;
 
         return count;
     }
