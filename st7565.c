@@ -14,14 +14,6 @@
 
 #include "st7565.h"
 
-/*
- *
- * TODO:
- *
- * - get rid of warnings
- *
- */
-
 static struct st7565 st;
 
 /*
@@ -32,10 +24,10 @@ static unsigned a0_gpio_num = 22;
 static unsigned rst_gpio_num = 27;
 static unsigned backlight_gpio_num = 2;
 
-module_param(chip_select, int, S_IRUGO);
-module_param(a0_gpio_num, int, S_IRUGO);
-module_param(rst_gpio_num, int, S_IRUGO);
-module_param(backlight_gpio_num, int, S_IRUGO);
+module_param(chip_select, byte, S_IRUGO);
+module_param(a0_gpio_num, uint, S_IRUGO);
+module_param(rst_gpio_num, uint, S_IRUGO);
+module_param(backlight_gpio_num, uint, S_IRUGO);
 
 static int __init st7565_init(void)
 {
@@ -115,7 +107,7 @@ static int __init st7565_init(void)
         .store = st7565_brightness_store
     };
     st.brightness = &brightness;
-    error = device_create_file(st.device, st.backlight);
+    error = device_create_file(st.device, st.brightness);
     if(error < 0)
     {
         printk(KERN_ALERT "Creating brighntess adjustment attribute failed with %d\n", error);
@@ -124,7 +116,7 @@ static int __init st7565_init(void)
 
     printk(KERN_INFO "module loaded\n");
     return SUCCESS;
-bnessrem:
+    
     device_remove_file(st.device, st.brightness);
 backllrem:
     device_remove_file(st.device, st.backlight);
@@ -396,13 +388,11 @@ static void st7565_release_lcd(void)
 
 static int st7565_init_backlight(void)
 {
-    int error = 0;
     gpio_set_value(st.gpiov[GPIO_BACK].gpio, 1);
 
     st.backlight_state = 1;
 
-out:
-    return error;
+    return SUCCESS;
 }
 
 static void st7565_release_backlight(void)
